@@ -63,6 +63,7 @@ jobs:
       - name: Sign the container image (keyless)
         env:
           DIGEST: ${{ needs.build.outputs.gh_sha }}
+          IMAGE_REPO: ${{ needs.build.outputs.gh_repo }}
         run: |
           cosign sign --yes \
-            ghcr.io/${{ needs.build.outputs.gh_repo }}@${DIGEST}
+            "ghcr.io/${IMAGE_REPO}@${DIGEST}"
