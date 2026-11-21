@@ -33,7 +33,8 @@ jobs:
       - name: To lowercase
         id: to_lowercase
         run: |
-          gh_repo = $(echo ${{ github.repository }} | awk '{print tolower($0)}') >> "$GITHUB_OUTPUT"
+          gh_repo_value=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "gh_repo=$gh_repo_value" >> "$GITHUB_OUTPUT"
           
       - name: Build and push image
         id: build
