@@ -1,0 +1,39 @@
+apiVersion: policies.kyverno.io/v1
+kind: NamespacedImageValidatingPolicy
+metadata:
+  name: verify-cosign-signature
+  namespace: production
+spec:
+  validationActions: [Deny]
+  webhookConfiguration:
+    timeoutSeconds: 15
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['']
+        apiVersions: ['v1']
+        resources: ['pods']
+        operations: ['CREATE', 'UPDATE']
+  matchImageReferences:
+    - glob: '*'
+  attestors:
+    - name: cosign
+      cosign:
+        keyless:
+          identities:
+            - subjectRegExp: "^https://github\\.com/chokecoDev/[A-Za-z0-9_\\-]+/\\.github/workflows/[A-Za-z0-9_.\\-]+@refs/heads/main$"
+              issuer: 'https://token.actions.githubusercontent.com'
+        ctlog:
+          url: 'https://rekor.sigstore.dev'
+  validations:
+    - expression: >-
+        (images.containers + images.initContainers + images.ephemeralContainers)
+        .map(image, verifyImageSignatures(image, [attestors.cosign]) > 0)
+        .all(e, e)
+      message: 'Failed image signature verification'
+    - expression: >-
+        (object.spec.containers +
+         object.spec.?initContainers.orValue([]) +
+         object.spec.?ephemeralContainers.orValue([]))
+          .all(c, c.image.matches('^.+@sha256:[a-f0-9]{64}$'))
+      message: 'Container images must be pinned by immutable digest (@sha256:...), not by tag alone.'

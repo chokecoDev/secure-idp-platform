@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: httpd-cosign-pod
+  namespace: production
+  labels:
+    app: httpd-cosign
+spec:
+  containers:
+    - name: httpd
+      image: ghcr.io/chokecodev/tutorial-cosign:f13a7724c0c5fc5de5c10c6284dbe28a9637fda4
+      ports:
+        - containerPort: 80
