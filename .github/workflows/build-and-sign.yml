@@ -15,9 +15,6 @@ jobs:
     outputs:
       gh_repo: ${{ steps.to_lowercase.outputs.gh_repo }}
       gh_sha: ${{ steps.build.outputs.digest }}
-    defaults:
-      run:
-        working-directory: ./01-supply-chain-security
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
         with:
@@ -47,6 +44,7 @@ jobs:
         with:
           push: true
           tags: ghcr.io/${{ steps.to_lowercase.outputs.gh_repo }}:${{ github.sha }}
+          context: "01-supply-chain-security"
 
   sign:
     runs-on: ubuntu-24.04
