@@ -45,6 +45,12 @@ Se utiliza la API moderna basada en expresiones CEL **`policies.kyverno.io/v1`**
 * **Sin *drift* en GitOps:** En lugar de mutar tags a *digests* en vuelo (lo que genera *drift* constante en ArgoCD/Flux), la política rechaza directamente cualquier imagen que no esté fijada por `@sha256:[a-f0-9]{64}`.
 * **Cobertura completa de contenedores:** Evalúa `containers`, `initContainers` y `ephemeralContainers`.
 
+### Deuda Técnica / Endurecimiento Pendiente (Backlog del Módulo)
+- [x] Reemplazar `matchConditions` por `namespaceSelector` en `matchConstraints` para filtrar en el API Server y reducir latencia/CPU en el webhook de Kyverno.
+- [ ] Restringir `matchImageReferences` (evitar `glob: '*'`) para no bloquear *sidecars* legítimos inyectados (Istio, Datadog, Vault Agent) mientras se bloquean registros no autorizados.
+- [ ] Acotar `subjectRegExp` a repositorios y *Reusable Workflows* específicos de producción.
+- [ ] Agregar validación CEL de la atestación SBOM (`verifyAttestations`) además de la firma de imagen.
+
 ---
 
 ## 🚨 Runbook Operativo: Disponibilidad y *Break-Glass* (Emergencia)
