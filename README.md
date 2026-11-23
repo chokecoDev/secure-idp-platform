@@ -1,77 +1,26 @@
-# Tutorial de firma y validación de imágenes con Cosign y Kyverno
+# 🛡️ Secure IDP Platform (`secure-idp-platform`)
 
-Este proyecto muestra un flujo completo para construir, publicar, firmar y validar imágenes de contenedores:
+Arquitectura de referencia de una **Plataforma Interna de Desarrollo (IDP) Segura** diseñada bajo principios de **Zero Trust**, **Defense in Depth** y **FinOps** para entornos Cloud-Native en producción.
 
-1. GitHub Actions construye la imagen y la publica en GitHub Container Registry.
-2. Cosign firma la imagen sin llave (`keyless`) usando la identidad de GitHub Actions.
-3. La firma se registra en Rekor.
-4. Kyverno verifica la firma y exige que las imágenes se referencien por digest antes de admitir Pods.
+Este repositorio documenta y automatiza controles de seguridad de extremo a extremo: desde la construcción inmutable de artefactos hasta la protección en tiempo de ejecución a nivel de kernel, evitando fricción innecesaria en el *Lead Time* de los equipos de desarrollo.
 
-## Contenido del repositorio
+---
 
-| Archivo | Descripción |
-| --- | --- |
-| `Dockerfile` | Construye una imagen basada en `httpd`. |
-| `.github/workflows/build-and-sign.yml` | Construye, publica y firma la imagen mediante Cosign. |
-| `imageValidationPolicy.yml` | Política de Kyverno que exige firmas válidas e imágenes inmóviles por digest. |
-| `pod-pass.yml` | Ejemplo de Pod que intenta usar la imagen publicada. |
-| `pod-error.yml` | Ejemplo de Pod sin firma ni referencia por digest, destinado a ser rechazado. |
 
-## Flujo de GitHub Actions
+## 🚀 Módulos de la Plataforma
 
-El workflow se ejecuta al hacer push a `main` y realiza dos trabajos:
+| Módulo | Enfoque Técnico | Estado | Documentación |
+| :--- | :--- | :---: | :--- |
+| **01. Supply Chain & Admisión Zero Trust** | SLSA, Cosign Keyless (OIDC/Fulcio/Rekor), Trivy SBOM (SPDX), Kyverno CEL (`policies.kyverno.io/v1`), Break-Glass | ✅ Implementado | [Ver detalle](./01-supply-chain-security/README.md) |
+| **02. Runtime & Kernel Security (eBPF)** | Tetragon / Cilium `TracingPolicies`, bloqueo de exfiltración de credenciales en vivo | 🚧 Planificado | — |
+| **03. AppSec Asíncrono a Escala** | Security Gates sin fricción, priorización por explotabilidad (EPSS/KEV) | 🚧 Planificado | — |
+| **04. Workload Identity Zero Trust** | Eliminación de secretos estáticos con OIDC, SPIFFE/SPIRE y Pod Identity | 🚧 Planificado | — |
+| **05. FinOps, CNAPP & Incident Response** | Aislamiento forense, detección de *Denial of Wallet* y validación IaC | 🚧 Planificado | — |
 
-- **build**: construye la imagen y la publica como
-  `ghcr.io/chokecodev/tutorial-cosign:<sha-del-commit>`.
-- **sign**: inicia sesión con `GITHUB_TOKEN`, instala Cosign y firma la imagen
-  publicada por su digest:
-  `ghcr.io/chokecodev/tutorial-cosign@sha256:<digest>`.
+---
 
-El `GITHUB_TOKEN` proporciona una credencial temporal de identidad OpenID. Por ello, el workflow
-debe solicitar los permisos `id-token: write` y `packages: write`.
+## 🎯 Principios de Diseño
 
-## Política de validación
-
-La política `verify-cosign-signature` se aplica al namespace `production`.
-
-Valida:
-
-- Pods creados o actualizados.
-- Contenedores normales, contenedores `init` y contenedores efímeros.
-- Firmas producidas por un workflow de GitHub Actions de este repositorio.
-- El issuer de OIDC `https://token.actions.githubusercontent.com`.
-- La transparencia de la firma en Rekor.
-- Una referencia de imagen con digest, mediante `@sha256:<64-caracteres-hexadecimales>`.
-
-Ante una imagen inválida, firma ausente o referencia por tag, la política deniega el recurso.
-
-> Importante: las referencias por tag son mutables. Aunque el contenido coincida hoy,
-> puede apuntar a otro contenido en el futuro. Utilizar siempre `@sha256:<digest>`.
-
-## Requisitos
-
-- Un cluster de Kubernetes.
-- Kyverno con soporte para políticas `NamespacedImageValidatingPolicy`.
-- Permisos para crear namespaces y políticas.
-- Acceso a GHCR, GitHub Actions y Rekor desde el cluster.
-- Cosign instalado localmente si se desea verificar una imagen manualmente.
-
-## Instalación
-
-Crear el namespace:
-
-```bash
-kubectl create namespace production
-```
-
-Aplicar la política:
-
-```bash
-kubectl apply -f imageValidationPolicy.yml
-```
-
-Comprobar que la política se instaló:
-
-```bash
-kubectl get namespacedimagevalidatingpolicy -n production
-```
+1. **Cero llaves estáticas:** Todas las identidades de CI/CD y cargas de trabajo operan con tokens efímeros (OIDC) para eliminar costos operativos de rotación y minimizar el *blast radius*.
+2. **Inmutabilidad por contenido:** Ningún artefacto se firma ni se despliega usando tags mutables (`:latest`, `:v1.4.2`); todo se referencia por `digest` (`@sha256:...`).
+3. **Resiliencia operativa (*Break-Glass*):** La seguridad nunca debe forzar un apagado global de controles durante un incidente crítico; las excepciones son acotadas, auditadas y auto-expirables.

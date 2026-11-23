@@ -1,14 +1,19 @@
 apiVersion: policies.kyverno.io/v1
-kind: NamespacedImageValidatingPolicy
+kind: ImageValidatingPolicy
 metadata:
   name: verify-cosign-signature
-  namespace: production
 spec:
   validationActions: [Deny]
   webhookConfiguration:
     timeoutSeconds: 15
   failurePolicy: Fail
   matchConstraints:
+    namespaceSelector:
+      matchExpressions:
+        - key: "environment"
+          operator: "In"
+          values:
+            - prod
     resourceRules:
       - apiGroups: ['']
         apiVersions: ['v1']
