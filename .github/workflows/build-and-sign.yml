@@ -15,11 +15,13 @@ jobs:
     outputs:
       gh_repo: ${{ steps.to_lowercase.outputs.gh_repo }}
       gh_sha: ${{ steps.build.outputs.digest }}
+    defaults:
+      run:
+        working-directory: ./01-supply-chain-security
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # tag=v7.0.1
         with:
           persist-credentials: false
-          path: "01-supply-chain-security"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # tag=v4.4.1
