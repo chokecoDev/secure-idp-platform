@@ -1,0 +1,53 @@
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicyNamespaced
+metadata:
+  name: policy-payments-binary-program
+  namespace: prod-payments
+spec:
+  podSelector:
+    matchLabels:
+      app: payments-api
+  kprobes:
+    - call: "security_bprm_check"
+      syscall: false
+      args:
+        - index: 0
+          type: "linux_binprm"
+      selectors:
+        - matchArgs:
+            - index: 0
+              operator: "Postfix"
+              values:
+                - "/curl"
+                - "/wget"
+                - "/sh"
+                - "/bash"
+                - "/dash"
+                - "/ash"
+                - "/zsh"
+          matchActions:
+            - action: Sigkill
+---
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicyNamespaced
+metadata:
+  name: policy-payments-file-open
+  namespace: prod-payments
+spec:
+  podSelector:
+    matchLabels:
+      app: payments-api
+  kprobes:
+    - call: "security_file_open"
+      syscall: false
+      args:
+        - index: 0
+          type: "file"
+      selectors:
+        - matchArgs:
+            - index: 0
+              operator: "Equal"
+              values:
+                - "/etc/shadow"
+          matchActions:
+            - action: Sigkill

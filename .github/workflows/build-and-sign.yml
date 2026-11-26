@@ -3,6 +3,8 @@ name: Build and Sign Container Image
 on:
   push:
     branches: [main]
+    paths:
+      - '01-supply-chain-security/**'
 
 permissions: {}
 
